@@ -9,26 +9,29 @@ GDBH="10"
 MODULEPATH="$HOME/.dzen2/modules"
 ICONPATH="$HOME/.dzen2/assets/xbm"
 NOTIFYICONPATH="$HOME/.dzen2/notify_icons"
-NORMALCOLOR="^fg()"
-ERRORCOLOR="^fg(red)"
-CLEARCOLOR="^fg()"
-COLOR="$NORMALCOLOR"
-COOLTEMPCOLOR="^fg(blue)"
-HOTTEMPCOLOR="^fg(red)"
+COLOR_NORMAL="^fg()"
+COLOR_ERROR="^fg(red)"
+COLOR_CLEAR="^fg()"
+COLOR="$COLOR_NORMAL"
+COLOR_TEMP_COOL="^fg(blue)"
+COLOR_TEMP_HOT="^fg(red)"
+COLOR_WIFI_FULL="^fg(green)"
+COLOR_WIFI_HALF="^fg(orange)"
+COLOR_WIFI_LOW="^fg(red)"
 
 myVol(){
     ismute=$(amixer get Master|grep %|awk '{ print $6 }'|sed 's/\[//g'|sed 's/\]//g')
     if [ "$ismute" == "off" ]; then
         VBS="0"
         VICO="^i($ICONPATH/spkr_02.xbm)" 
-        COLOR="$ERRORCOLOR"
+        COLOR="$COLOR_ERROR"
     else
         VBS=$(amixer get Master|grep %|awk '{ print $4 }'|sed 's/%//g'|sed 's/\[//g'|sed 's/\]//g')
         VICO="^i($ICONPATH/spkr_01.xbm)" 
     fi
 
     VBAR=$(echo "$VBS" | gdbar -s v -fg "$FG" -bg gray40 -h $GDBH -w $GDBW|awk '{ print $1 }')
-    echo "$COLOR$VICO $VBAR$CLEARCOLOR"
+    echo "$COLOR$VICO $VBAR$COLOR_CLEAR"
 
 }
 
@@ -60,11 +63,11 @@ myBat(){
                 notify-send "Battery Critical" "You battery state is critical $PERCENT left."
                 touch /tmp/battery_critical
             fi            
-            COLOR="$ERRORCOLOR"
+            COLOR="$COLOR_ERROR"
         fi
     fi
     
-    echo "$COLOR$ICO $PERCENT$CLEARCOLOR"
+    echo "$COLOR$ICO $PERCENT$COLOR_CLEAR"
 }
 
 myMem(){
@@ -76,10 +79,10 @@ myMem(){
     PERCENT=$(echo "$PERCENT" | cut -d '.' -f 1)
     ICO="^i($ICONPATH/mem.xbm)"
     if [ $PERCENT -gt 90 ]; then
-        COLOR="$ERRORCOLOR"
+        COLOR="$COLOR_ERROR"
     fi
     PERCENT="$PERCENT%"
-    echo "$COLOR$ICO $PERCENT$CLEARCOLOR"
+    echo "$COLOR$ICO $PERCENT$COLOR_CLEAR"
 }
 
 myCPU(){
@@ -88,9 +91,9 @@ myCPU(){
     PERCENTAGE=$(echo "$PERCENTAGE" | tr -d " ")
     NUM=$(echo $PERCENTAGE | cut -d '%' -f 1)
     if [ $NUM -gt 90 ]; then
-        COLOR="$ERRORCOLOR"
+        COLOR="$COLOR_ERROR"
     fi
-    echo "$COLOR$ICO $PERCENTAGE$CLEARCOLOR"
+    echo "$COLOR$ICO $PERCENTAGE$COLOR_CLEAR"
 }
 
 myDisks(){
@@ -104,17 +107,17 @@ myDisks(){
     HCOLOR=""
     if [ "$ROOTPER" -gt 90 ]; then
         RBCOLOR="-fg red"
-        RCOLOR="$ERRORCOLOR"
+        RCOLOR="$COLOR_ERROR"
     fi
 
     if [ "$HOMEPER" -gt 90 ]; then
         HBCOLOR="-fg red"
-        HCOLOR="$ERRORCOLOR"
+        HCOLOR="$COLOR_ERROR"
     fi
 
     HOMEBAR=`echo $MYHOMEUSG|gdbar -w $GDBW -h $GDBH $HBCOLOR -max $MYHOMEMAX|awk '{ print $2 }'`
     ROOTBAR=`echo $ROOTUSG|gdbar -w $GDBW -h $GDBH $RBCOLOR -max $ROOTMAX|awk '{ print $2 }'`
-    echo "$RCOLOR root $ROOTBAR$CLEARCOLOR$HCOLOR home $HOMEBAR$CLEARCOLOR"
+    echo "$RCOLOR root $ROOTBAR$COLOR_CLEAR$HCOLOR home $HOMEBAR$COLOR_CLEAR"
 }
 
 myTemp(){
@@ -123,18 +126,37 @@ myTemp(){
     PERCENT=$(echo "scale=2; ($TMP/$MAX) * 100" | bc  )
     PERCENT=$(echo "$PERCENT" | cut -d '.' -f 1)
     ICO="^i($ICONPATH/temp.xbm)"
-    COLOR="$COOLTEMPCOLOR"
+    COLOR="$COLOR_TEMP_COOL"
     if [ $PERCENT -gt 90 ]; then
         notify-send "Temperature Critical" "Cool this bitch down."
-        COLOR="$HOTTEMPCOLOR"
+        COLOR="$COLOR_TEMP_HOT"
     fi
-    echo "$COLOR$ICO $TMP°C$CLEARCOLOR"
+    echo "$COLOR$ICO $TMP°C$COLOR_CLEAR"
+}
+
+myWifi() {
+    MAX="255"
+    SIGNAL=$(iwconfig wlan0 | grep Signal | cut -d '=' -f 3 | awk '{ print $1}' | sed s/-//g)
+    PERCENT=$(echo "scale=2; ($SIGNAL/$MAX) * 100" | bc)
+    PERCENT=$(echo "$PERCENT" | cut -d '.' -f 1)
+    PERCENT=$(echo "100 - $PERCENT" | bc)
+    ICO="^i($ICONPATH/wifi_full.xbm)"
+    COLOR="$COLOR_WIFI_FULL"
+    if [ $PERCENT -lt 66 ]; then 
+        ICO="^i($ICONPATH/wifi_half.xbm)"
+        COLOR="$COLOR_WIFI_HALF"
+        if [ $PERCENT -lt 33 ]; then
+            ICO="^i($ICONPATH/wifi_low.xbm)"
+            COLOR="$COLOR_WIFI_LOW"
+        fi
+    fi
+    echo "$COLOR$ICO $PERCENT%$COLOR_CLEAR"
 }
 
 while true ; do
     dt=`date +"%I:%M %a, %x"`
     #echo "$(myDisks)$SEP$(myCPU)$SEP$(myMem)$SEP$(myVol)$SEP$(myTemp)$SEP$(myBat)$SEP$dt"
-    echo "$(myVol)$SEP$(myCPU)$SEP$(myMem)$SEP$(myBat)$SEP$(myTemp)$SEP$dt"
+    echo "$(myVol)$SEP$(myCPU)$SEP$(myMem)$SEP$(myBat)$SEP$(myTemp)$SEP$(myWifi)$SEP$dt"
     sleep 1
 done | dzen2 -h '16' -ta r -fg $FG -bg $BG -fn $FONT 
 
