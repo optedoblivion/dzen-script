@@ -20,7 +20,7 @@ COLOR_WIFI_HALF="^fg(orange)"
 COLOR_WIFI_LOW="^fg(red)"
 
 myVol(){
-    ismute=$(amixer get Master|grep %|awk '{ print $6 }'|sed 's/\[//g'|sed 's/\]//g')
+    ismute=$(amixer get Master|grep %|awk '{ print $5 }'|sed 's/\[//g'|sed 's/\]//g')
     if [ "$ismute" == "off" ]; then
         VBS="0"
         VICO="^i($ICONPATH/spkr_02.xbm)" 
@@ -155,8 +155,8 @@ myWifi() {
 
 while true ; do
     dt=`date +"%I:%M %a, %x"`
-    #echo "$(myDisks)$SEP$(myCPU)$SEP$(myMem)$SEP$(myVol)$SEP$(myTemp)$SEP$(myBat)$SEP$dt"
-    echo "$(myVol)$SEP$(myCPU)$SEP$(myMem)$SEP$(myBat)$SEP$(myTemp)$SEP$(myWifi)$SEP$dt"
+    #echo "$(myVol)$SEP$(myCPU)$SEP$(myMem)$SEP$(myBat)$SEP$(myTemp)$SEP$(myWifi)$SEP$dt"
+    echo "$(myVol)$SEP$(myMem)$SEP$(myBat)$SEP$(myWifi)$SEP$dt"
     sleep 1
 done | dzen2 -h '16' -ta r -fg $FG -bg $BG -fn $FONT 
 
