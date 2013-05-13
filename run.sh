@@ -20,7 +20,7 @@ COLOR_WIFI_HALF="^fg(orange)"
 COLOR_WIFI_LOW="^fg(red)"
 
 myVol(){
-    ismute=$(amixer get Master|grep %|awk '{ print $5 }'|sed 's/\[//g'|sed 's/\]//g')
+    ismute=$(amixer get Master|grep %|awk '{ print $6 }'|sed 's/\[//g'|sed 's/\]//g'|uniq)
     if [ "$ismute" == "off" ]; then
         VBS="0"
         VICO="^i($ICONPATH/spkr_02.xbm)" 
